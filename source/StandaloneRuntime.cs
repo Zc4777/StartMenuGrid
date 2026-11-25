@@ -12,7 +12,7 @@ using System.Threading;
 
 internal sealed class StandaloneRuntime
 {
-    private const string Version = "2.0.2.0";
+    private const string Version = "2.0.3.0";
     private const string ApplicationFile = "StartMenuGrid.exe";
     private const string LayoutFile = "StartMenuGrid.Layout.dll";
     private const string StatusProperty = "StartMenuGrid.Layout.Status.2";
@@ -21,6 +21,7 @@ internal sealed class StandaloneRuntime
     private const string StartMenuLocation = @"SystemApps\MicrosoftWindows.Client.Core_cw5n1h2txyewy\StartMenu.dll";
     private const string StartMenuHash = "00EBBBCE3040A0B605F9F61F6ABC1BE9F4AA5B0A53823807145F7ED619862DAA";
     private const int MissingEndpoint = unchecked((int)0x80070490);
+    private const int MissingTask = unchecked((int)0x80070002);
     private static readonly Guid TapClass = new Guid("c418beb0-594e-434c-8c27-9d0ace8a35b5");
     private readonly string root;
     private readonly string installDirectory;
@@ -376,9 +377,10 @@ internal sealed class StandaloneRuntime
     private dynamic FindLogonTask(dynamic folder)
     {
         try { return folder.GetTask(taskName); }
-        catch (COMException error)
+        catch (Exception error)
         {
-            if (error.ErrorCode != unchecked((int)0x80070002)) throw;
+            // COM interop can surface this HRESULT as FileNotFoundException.
+            if (error.HResult != MissingTask) throw;
             return null;
         }
     }
@@ -411,16 +413,11 @@ internal sealed class StandaloneRuntime
 
     private void RemoveLogonTask()
     {
-        try
+        dynamic folder = OpenTaskService().GetFolder(@"\");
+        try { folder.DeleteTask(taskName, 0); }
+        catch (Exception error)
         {
-            dynamic service = OpenTaskService();
-            dynamic folder = service.GetFolder(@"\");
-            folder.DeleteTask(taskName, 0);
-        }
-        catch (COMException error)
-        {
-            if (error.ErrorCode != unchecked((int)0x80070002))
-                throw;
+            if (error.HResult != MissingTask) throw;
         }
     }
 }
