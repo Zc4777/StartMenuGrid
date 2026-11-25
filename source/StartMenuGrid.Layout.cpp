@@ -221,6 +221,7 @@ struct Layout {
     int64_t leftToken = 0;
     double anchoredWidth = 0;
     bool correctedLeft = false;
+    FrameworkElement allAppsList{nullptr};
     double recommendationExtraWidth = 0;
     FrameworkElement recommendations{nullptr};
     std::vector<RecommendationRow> recommendationRows;
@@ -547,6 +548,20 @@ FrameworkElement Find(FrameworkElement const& element, std::wstring_view name, s
     return nullptr;
 }
 
+void UpdateAllAppsViewport(Layout& layout) {
+    if (!layout.allAppsList || !layout.allAppsList.IsLoaded()) {
+        auto pane = Find(layout.frame, L"AllAppsRoot");
+        layout.allAppsList = pane ? Find(pane, L"AppsList", L"StartDocked.AllAppsGridListView") : nullptr;
+    }
+
+    auto const& list = layout.allAppsList;
+    // The native list is top-aligned and keeps its stock desired height.
+    // Stretch it inside the semantic zoom presenter so its scroll viewer can use the full pane.
+    if (list && list.ActualHeight() > 0 && list.VerticalAlignment() != VerticalAlignment::Stretch) {
+        layout.Set(list, FrameworkElement::VerticalAlignmentProperty(), winrt::box_value(VerticalAlignment::Stretch));
+    }
+}
+
 void UpdateRecommendationRows(Layout& layout) {
     if (layout.recommendationExtraWidth <= 0) {
         if (!layout.recommendationRows.empty()) {
@@ -733,6 +748,11 @@ void Attach() noexcept {
         layoutToken = content.LayoutUpdated([](auto const&, auto const&) {
             TryApply();
             if (active) {
+                try {
+                    UpdateAllAppsViewport(*active);
+                } catch (...) {
+                    Log(L"Updating the All apps viewport failed: 0x%08X", winrt::to_hresult());
+                }
                 try {
                     UpdateRecommendationRows(*active);
                 } catch (...) {

@@ -12,7 +12,7 @@ using System.Threading;
 
 internal sealed class StandaloneRuntime
 {
-    private const string Version = "2.0.1.0";
+    private const string Version = "2.0.2.0";
     private const string ApplicationFile = "StartMenuGrid.exe";
     private const string LayoutFile = "StartMenuGrid.Layout.dll";
     private const string StatusProperty = "StartMenuGrid.Layout.Status.2";

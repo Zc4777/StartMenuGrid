@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyFileVersion("2.0.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.0.2.0")]
 
 internal static class Program
 {
